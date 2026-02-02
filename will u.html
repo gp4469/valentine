@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Will you be my Valentine?</title>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    :root {
+      --bg1: #ffd6e7; --bg2: #ffeef6; --card: #ffffffcc; --yes: #ff3b7a; --yesHover: #ff1f68;
+    }
+    * { box-sizing: border-box; }
+    
+    body {
+      margin: 0; min-height: 100svh; display: grid; place-items: center;
+      background: radial-gradient(circle at top, var(--bg2), var(--bg1));
+      font-family: system-ui, sans-serif; overflow: hidden; padding: 16px;
+      position: relative; touch-action: none;
+    }
+
+    /* THE SECRET HIDDEN TEXT (Behind the card) */
+    .hidden-message {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(40px, 10vw, 100px); font-weight: 900;
+      color: rgba(255, 59, 122, 0.12); z-index: 1;
+      pointer-events: none; text-align: center; width: 100%;
+      user-select: none; display: none;
+    }
+
+    #confettiCanvas { position: fixed; inset: 0; pointer-events: none; z-index: 9999; }
+    
+    .card {
+      width: min(600px, 92vw); padding: 30px 25px; background: var(--card);
+      backdrop-filter: blur(12px); border-radius: 24px; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15); border: 1px solid rgba(255, 255, 255, 0.5);
+      position: relative; z-index: 10; cursor: grab; user-select: none;
+    }
+    .card:active { cursor: grabbing; }
+
+    .art { width: min(240px, 70vw); margin: 0 auto 15px; display: block; pointer-events: none; }
+    h1 { font-size: clamp(24px, 5vw, 40px); margin: 10px 0 20px; color: #333; }
+    
+    .button-zone { position: relative; width: 100%; height: 120px; margin: 0 auto; }
+    button {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      padding: 14px 28px; font-size: 18px; font-weight: 800; border-radius: 999px;
+      border: none; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,.1);
+      transition: transform 0.2s ease; z-index: 20;
+    }
+
+    #yesBtn { left: 20%; background: var(--yes); color: #fff; }
+    #noBtn { left: 60%; background: #f3f4f6; color: #111827; }
+
+    .result { display: none; margin-top: 20px; animation: pop 0.4s ease; }
+    .cute-gif { width: min(280px, 75vw); border-radius: 12px; margin: 10px auto; }
+    
+    .date-ideas { text-align: left; margin-top: 20px; background: rgba(255, 255, 255, 0.6); padding: 15px; border-radius: 12px; }
+    .date-ideas p { font-weight: bold; margin: 10px 0; text-align: center; }
+    
+    .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .option-item { background: #fff; padding: 10px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 2px solid transparent; text-align: center; }
+    .option-item.selected { border-color: #ff3b7a; background: #fff0f5; }
+    
+    #submitDateBtn { position: relative; background: var(--yes); color: white; margin-top: 20px; width: 100%; transform: none; }
+    
+    .final-page { display: none; animation: pop 0.6s ease; }
+
+    /* SWIPE BOX */
+    .swipe-container {
+      position: relative; width: min(280px, 80vw); height: 320px;
+      margin: 20px auto; background: #fff; border-radius: 15px;
+      overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+    .photo-under { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 15px; }
+    .swipe-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: var(--yes); color: white; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; cursor: grab; z-index: 5;
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .bg-hint {
+      position: absolute; bottom: -35px; left: 50%; transform: translateX(-50%);
+      font-size: 16px; color: #ff3b7a; font-weight: 600; width: 100%;
+      pointer-events: none; text-align: center;
+    }
+
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="hidden-message" id="secretMsg">LETS FUCK?</div>
+  
+  <canvas id="confettiCanvas"></canvas>
+
+  <main class="card" id="dragCard">
+    <svg class="art" id="mainArt" viewBox="0 0 320 240"><path d="M250 50 C250 33 270 25 282 38 C294 25 314 33 314 50 C314 78 282 92 282 106 C282 92 250 78 250 50Z" fill="#ff1f68"/><path d="M90 120 C90 70 140 40 190 60 C240 40 290 70 290 120 C290 180 240 210 190 210 C140 210 90 180 90 120Z" fill="#f2a97b"/><circle cx="160" cy="130" r="8"/><circle cx="220" cy="130" r="8"/></svg>
+
+    <div id="questionSection">
+      <h1>Archita, will you be my valentine?</h1>
+      <section class="button-zone" id="zone">
+        <button id="yesBtn">Yes</button><button id="noBtn">No</button>
+      </section>
+    </div>
+
+    <section class="result" id="result">
+      <h2>Yay! ❤️</h2>
+      <img class="cute-gif" src="https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExczhwdTdtdjVsbGZzeWMyb2hnOTVvMmtjNWh3eXJ1M2k3d3F1NTFqNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/dPEJxh06y4OTC/giphy.gif" />
+      <div class="date-ideas">
+        <p>What should we eat? 🍕</p>
+        <div class="options-grid">
+          <div class="option-item" onclick="toggleSelect(this)">🍕 Pizza</div>
+          <div class="option-item" onclick="toggleSelect(this)">🍔 Burger</div>
+          <div class="option-item" onclick="toggleSelect(this)">🍣 Sushi</div>
+          <div class="option-item" onclick="toggleSelect(this)">😈 you?</div>
+        </div>
+        <p>Virtual Celebration? ✨</p>
+        <div class="options-grid">
+          <div class="option-item" onclick="toggleSelect(this)">🎬 Netflix Party</div>
+          <div class="option-item" onclick="toggleSelect(this)">🎨 Paint & Sip</div>
+          <div class="option-item" onclick="toggleSelect(this)">🎮 Online Games</div>
+          <div class="option-item" onclick="toggleSelect(this)">🌍 Dream Trip Plan</div>
+        </div>
+        <button id="submitDateBtn" onclick="showFinal()">Lock in Date! 🔒</button>
+      </div>
+    </section>
+
+    <section class="final-page" id="finalPage">
+      <h2>It's a Date!</h2>
+      <div id="finalMsg" style="margin-bottom:15px;"></div>
+      <div class="swipe-container">
+        <div class="swipe-overlay" id="overlay" onmousedown="startSwipe(event)" ontouchstart="startSwipe(event)">
+           <p>Swipe for a Surprise →</p>
+           <span>🤫</span>
+        </div>
+        <img class="photo-under" src="us.jpg" onerror="this.src='us.jpeg'; this.onerror=function(){this.src='us.jpg.jpg'; this.onerror=function(){this.src='us.jpg.jpeg'}}" />
+      </div>
+      <div class="bg-hint">you could also swipe this 😙☝🏼</div>
+    </section>
+  </main>
+
+  <script>
+    const card = document.getElementById("dragCard");
+    const secretMsg = document.getElementById("secretMsg");
+    const noBtn = document.getElementById("noBtn"); 
+    const yesBtn = document.getElementById("yesBtn");
+    const zone = document.getElementById("zone");
+
+    /* DRAGGING LOGIC */
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    card.addEventListener('pointerdown', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.classList.contains('option-item') || e.target.id === 'overlay') return;
+      isDragging = true;
+      offsetX = e.clientX - card.getBoundingClientRect().left;
+      offsetY = e.clientY - card.getBoundingClientRect().top;
+      card.style.position = 'absolute';
+    });
+
+    document.addEventListener('pointermove', (e) => {
+      if (!isDragging) return;
+      card.style.left = `${e.clientX - offsetX}px`;
+      card.style.top = `${e.clientY - offsetY}px`;
+      card.style.transform = 'none';
+      secretMsg.style.display = "block";
+    });
+
+    document.addEventListener('pointerup', () => isDragging = false);
+
+    /* VALENTINE LOGIC */
+    let yesScale = 1;
+    noBtn.addEventListener("mouseover", () => {
+      const x = Math.random() * (zone.offsetWidth - noBtn.offsetWidth);
+      const y = Math.random() * (zone.offsetHeight - noBtn.offsetHeight);
+      noBtn.style.left = x + "px";
+      noBtn.style.top = y + "px";
+      yesScale += 0.15; yesBtn.style.transform = `translateY(-50%) scale(${yesScale})`;
+    });
+
+    yesBtn.addEventListener("click", () => {
+      document.getElementById("questionSection").style.display = "none";
+      document.getElementById("mainArt").style.display = "none";
+      document.getElementById("result").style.display = "block";
+      confetti();
+    });
+
+    function toggleSelect(el) { el.classList.toggle("selected"); }
+
+    function showFinal() {
+      const sel = Array.from(document.querySelectorAll('.selected')).map(el => el.innerText);
+      document.getElementById("result").style.display = "none";
+      document.getElementById("finalPage").style.display = "block";
+      document.getElementById("finalMsg").innerHTML = "I'll see you on screen for our " + (sel.length > 0 ? sel.join(" & ") : "surprise date!");
+      confetti();
+    }
+
+    function startSwipe(e) {
+      const overlay = document.getElementById("overlay");
+      const startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+      function onMove(moveEvent) {
+        const currentX = moveEvent.type === 'touchmove' ? moveEvent.touches[0].clientX : moveEvent.clientX;
+        if (currentX - startX > 40) {
+          overlay.style.transform = "translateX(110%)";
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('touchmove', onMove);
+        }
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('touchmove', onMove);
+    }
+  </script>
+</body>
+</html>
