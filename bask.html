@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOVEREIGN | ARENA</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Space+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Syncopate', sans-serif; color: white; }
+        
+        #ui { position: absolute; width: 100%; height: 100%; z-index: 100; display: flex; align-items: center; justify-content: center; perspective: 1500px; }
+        
+        /* --- START SCREEN --- */
+        #start-screen { 
+            display: flex; flex-direction: row; align-items: center; justify-content: center; 
+            width: 100vw; height: 100vh; pointer-events: auto; padding: 0 5vw; box-sizing: border-box;
+        }
+
+        #start-bg-gif { 
+            height: 60vh; width: auto; border-radius: 20px; 
+            filter: drop-shadow(0 0 30px rgba(0, 242, 255, 0.4)); 
+            order: 1; margin-right: 5vw;
+        }
+
+        .text-container { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transform-style: preserve-3d; animation: move3d 4s infinite ease-in-out;
+            order: 2; z-index: 2;
+        }
+
+        @keyframes move3d { 0%, 100% { transform: rotateY(10deg); } 50% { transform: rotateY(-10deg); } }
+
+        #game-title { 
+            font-size: 7vw; margin: 0; letter-spacing: -2px; color: #fff; 
+            text-shadow: 0 0 20px #00f2ff, 0 0 40px #00f2ff; white-space: nowrap;
+        }
+        
+        #start-prompt { 
+            font-size: 1.5vw; color: #00f2ff; border: 3px solid #00f2ff; padding: 15px 40px; 
+            cursor: pointer; background: rgba(0,0,0,0.5); text-transform: uppercase; 
+            letter-spacing: 8px; margin-top: 30px; transition: 0.3s; pointer-events: all;
+        }
+        #start-prompt:hover { background: #00f2ff; color: #000; box-shadow: 0 0 50px #00f2ff; transform: scale(1.1); }
+        
+        /* --- PRE-GAME --- */
+        #pre-countdown { display: none; font-size: 20vw; color: #00f2ff; text-shadow: 0 0 50px #00f2ff; font-weight: 900; z-index: 500; text-align: center; }
+        .pop-anim { animation: pop 0.6s ease-out; }
+        @keyframes pop { 0% { transform: scale(2.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* --- GAMEPLAY (60 SEC) --- */
+        #game-ui { display: none; width: 100%; height: 100%; transform-style: preserve-3d; flex-direction: column; align-items: center; justify-content: center; }
+        #motivation-text { font-size: 2.2vw; letter-spacing: 10px; color: #ff0055; text-transform: uppercase; margin-bottom: 30px; text-shadow: 0 0 15px #ff0055; height: 45px; }
+        #score-display { font-size: 25vw; margin: 0; line-height: 0.8; letter-spacing: -15px; color: #fff; text-shadow: 0 0 40px #00f2ff; }
+        #timer-box { position: absolute; top: 5%; right: 5%; font-size: 8vw; color: #ff0055; text-shadow: 0 0 25px #ff0055; font-family: 'Space Mono', monospace; }
+
+        /* --- RANKING PAGE --- */
+        #rank-page { display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; background: #000; }
+        #rank-title { font-size: 6vw; margin: 10px 0; text-transform: uppercase; color: #fff; text-shadow: 3px 3px #ff0055; }
+        #rank-gif { height: 40vh; width: auto; border-radius: 15px; border: 4px solid #00f2ff; margin: 20px 0; box-shadow: 0 0 30px rgba(0, 242, 255, 0.5); }
+        #rank-roast { font-family: 'Space Mono'; font-size: 1.5vw; color: #00f2ff; max-width: 800px; margin-bottom: 30px; line-height: 1.5; }
+        #restart-btn { padding: 20px 60px; border: 3px solid #fff; color: #fff; cursor: pointer; text-transform: uppercase; letter-spacing: 10px; background: transparent; transition: 0.3s; }
+        #restart-btn:hover { background: #fff; color: #000; }
+
+        #fx-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; overflow: hidden; }
+        .hype-word { position: absolute; font-size: 6vw; font-weight: 900; text-transform: uppercase; color: #fff; text-shadow: 0 0 20px #ff0055; animation: hypeAnim 0.7s forwards; }
+        @keyframes hypeAnim { 0% { transform: scale(0.5); opacity: 0; } 50% { opacity: 1; } 100% { transform: scale(2.5); opacity: 0; } }
+    </style>
+</head>
+<body>
+    
+    <div id="fx-layer"></div>
+
+    <div id="ui">
+        <div id="start-screen">
+            <img src="https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW1sazU0cmxuOGppdHRibXM4NzNsNTFxbW5idDV6OXV2am5mYjd2dyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/mFdnWF1RTI7fi/giphy.gif" id="start-bg-gif">
+            <div class="text-container">
+                <h1 id="game-title">SOVEREIGN</h1>
+                <div id="start-prompt" onclick="preStart()">ENTER ARENA</div>
+            </div>
+        </div>
+
+        <div id="pre-countdown">3</div>
+
+        <div id="game-ui">
+            <div id="timer-box">60</div>
+            <p id="motivation-text">ARE YOU READY?</p>
+            <h1 id="score-display">0</h1>
+        </div>
+
+        <div id="rank-page">
+            <h1 id="rank-title">TITLE</h1>
+            <img id="rank-gif" src="" alt="Result GIF">
+            <p id="rank-roast">ROAST</p>
+            <div id="restart-btn" onclick="location.reload()">RELOAD</div>
+        </div>
+    </div>
+
+<script>
+    let score = 0, time = 60, active = false, streak = 0;
+    
+    const phrases = {
+        early: ["CMON YOU CAN DO IT!", "SHOW THEM WHO IS BOSS!", "GET IN THE ZONE!"],
+        mid: ["IS THAT ALL YOU GOT?", "MY GRANDMA SHOOTS BETTER!", "DONT CHOKE NOW!"],
+        late: ["HURRY UP!!", "THE CLOCK IS TICKING!", "FINISH STRONG!"]
+    };
+
+    function preStart() {
+        document.getElementById('start-screen').style.display = 'none';
+        const preCount = document.getElementById('pre-countdown');
+        preCount.style.display = 'block';
+        let timeLeft = 3;
+        const countInterval = setInterval(() => {
+            timeLeft--;
+            if(timeLeft > 0) {
+                preCount.textContent = timeLeft;
+                preCount.classList.remove('pop-anim'); void preCount.offsetWidth; preCount.classList.add('pop-anim');
+            } else if (timeLeft === 0) {
+                preCount.textContent = "GO!!";
+                preCount.style.color = "#00f2ff"; 
+                preCount.classList.remove('pop-anim'); void preCount.offsetWidth; preCount.classList.add('pop-anim');
+            } else {
+                clearInterval(countInterval);
+                preCount.style.display = 'none';
+                startGame();
+            }
+        }, 1000);
+    }
+
+    function startGame() {
+        score = 0; time = 60; active = true;
+        document.getElementById('game-ui').style.display = 'flex';
+        const mText = document.getElementById('motivation-text');
+        const clock = setInterval(() => {
+            time--;
+            document.getElementById('timer-box').textContent = time;
+            if (time % 2 === 0) {
+                if (time > 40) mText.textContent = phrases.early[Math.floor(Math.random() * 3)];
+                else if (time > 15) mText.textContent = phrases.mid[Math.floor(Math.random() * 3)];
+                else mText.textContent = phrases.late[Math.floor(Math.random() * 3)];
+            }
+            if(time <= 0) { clearInterval(clock); active = false; showRankPage(); }
+        }, 1000);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if(!active) return;
+        if(e.code === 'Space' || e.key === ' ') { e.preventDefault(); update(2); }
+        if(e.key === '3') update(3);
+    });
+
+    function update(pts) {
+        score += pts; streak++;
+        const scoreDisplay = document.getElementById('score-display');
+        scoreDisplay.textContent = score;
+        scoreDisplay.style.transform = "scale(1.1)";
+        setTimeout(() => scoreDisplay.style.transform = "scale(1)", 100);
+
+        const word = document.createElement('div');
+        word.className = 'hype-word';
+        word.textContent = ["KABOOM!", "SWOOSH!", "GODLIKE!", "CLEAN!"][Math.floor(Math.random() * 4)];
+        word.style.left = (Math.random() * 60 + 20) + "%";
+        word.style.top = (Math.random() * 40 + 20) + "%";
+        document.getElementById('fx-layer').appendChild(word);
+        setTimeout(() => word.remove(), 700);
+
+        if(streak % 5 === 0) {
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#00f2ff', '#ff0055', '#ffffff'] });
+        }
+    }
+
+    function showRankPage() {
+        document.getElementById('game-ui').style.display = 'none';
+        const page = document.getElementById('rank-page');
+        const title = document.getElementById('rank-title');
+        const roast = document.getElementById('rank-roast');
+        const gif = document.getElementById('rank-gif');
+        page.style.display = 'flex';
+
+        if (score >= 50) { 
+            title.textContent = "SOVEREIGN"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWluZ3d1YW4xam1pOW83eTYzZWx5aDltbXcxcGVsZG55Z3p5OTdtYyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/7zW5KQI8Zez4lTuvQr/giphy.gif";
+            roast.textContent = "ABSOLUTE GOD STATUS. THE ARENA BOWS TO YOU."; 
+        } 
+        else if (score >= 40) { 
+            title.textContent = "ELITE SNIPER"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOGFpNmI4azQ3ZnUxMnE2ejVqcXI0cTBvN2locXVvOTU2bmk1Ynd5aCZlcD12MV9naWZzX3NlYXJjaCZjdD1n/lxxOGaDRk4f7R5TkBd/giphy.gif";
+            roast.textContent = "YOU'RE SCARY GOOD. THE HOOP IS PROBABLY FILING A RESTRAINING ORDER."; 
+        } 
+        else if (score >= 30) { 
+            title.textContent = "PRO BALLER"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3b2t5bDdxbzc5N3Q1eHV6MHJzN2sxcG9xc2RlMW84cGlmbjUyZzB2MyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/Op5wF3ZF35900Zjmdr/giphy.gif";
+            roast.textContent = "SOLID RUN. YOU HAVE ACTUAL SKILL, BUT THE THRONE REQUIRES MORE."; 
+        }
+        else if (score >= 20) { 
+            title.textContent = "STREET CHUMP"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPWVjZjA1ZTQ3Mml3ZHBicHN5ZncyM2FxeHM2djI4NWU2NGNqNDd2czE5bnl5ZG9laiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/p5hbKH96c28ua9Eidj/giphy.gif";
+            roast.textContent = "NOT BAD FOR AN AMATEUR. YOU HIT THE HOOP... SOMETIMES."; 
+        }
+        else if (score >= 10) { 
+            title.textContent = "BENCH WARMER"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExejJtNDNxNW1wMXE4cGh1N3NkbG4zMzRhZ3U1ZHB1OWo0dDExZ3lzZiZlcD12MV9naWZzX3NlYXJjaCZjdD1n/EH710AfxjA45j1eios/giphy.gif";
+            roast.textContent = "HEY, AT LEAST YOU DIDN'T GET ZERO. ALTHOUGH, THE BENCH IS CALLING."; 
+        }
+        else { 
+            title.textContent = "CERTIFIED POTATO"; 
+            gif.src = "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMWluZ3d1YW4xam1pOW83eTYzZWx5aDltbXcxcGVsZG55Z3p5OTdtYyZlcD12MV9naWZzX3NlYXJjaCZjdD1n/7zW5KQI8Zez4lTuvQr/giphy.gif";
+            roast.textContent = "WERE YOU EVEN LOOKING AT THE SCREEN? ABSOLUTELY TRASH AIM."; 
+        }
+        confetti({ particleCount: 400, spread: 150 });
+    }
+</script>
+</body>
+</html>
